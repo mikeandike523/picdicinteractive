@@ -1,21 +1,140 @@
-import React, { RefObject, useEffect, useState, useRef } from 'react';
-import { DndProvider, DropTargetMonitor, useDrag, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import './App.css';
+import { css, keyframes } from "@emotion/react";
+import _ from "lodash";
+import {
+  Dispatch,
+  forwardRef,
+  RefObject,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { Button, Div, DivProps, Img, Span } from "style-props-html";
+import useDingBuzzer from "./hooks/useDingBuzzer";
 
-// Type for the bounding box (assumed to always have 4 numbers)
-type BBox = [number, number, number, number];
+const PAGE = "page_006";
 
-// Interface for each annotation from the JSON
+// The amounts of extra room on each side to add to the bboxes/drop targets to make them a little less tight
+// OCR was used to get bounding boxes and the boxes are too tight to look good
+// These are in original units from the image (not css units)
+const EXPAND_X_PX = 20;
+const EXPAND_Y_PX = 20;
+
 interface Annotation {
-  bbox: BBox;
+  // x, y, w, h
+  bbox: [number, number, number, number];
   text: string;
 }
 
-// Interface for the page data
-interface PageData {
+interface JsonData {
   page_image: string;
+  width: number;
+  height: number;
   annotations: Annotation[];
+}
+
+interface LoadingSpinnerProps extends DivProps {
+  size: number | string;
+  spinnerSize?: number | string;
+  innerDivProps?: Partial<DivProps>;
+}
+
+const spinAnimation = keyframes`
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+`;
+
+const LoadingSpinner = forwardRef<HTMLDivElement, LoadingSpinnerProps>(
+  function LoadingSpinner(
+    { size, spinnerSize = size, innerDivProps = {}, ...rest },
+    ref
+  ) {
+    const sizeString = typeof size === "number" ? `${size}px` : size;
+    const spinnerSizeString =
+      typeof spinnerSize === "number" ? `${spinnerSize}px` : spinnerSize;
+    return (
+      <Div
+        ref={ref}
+        width={sizeString}
+        height={sizeString}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        {...rest}
+      >
+        <Div
+          width={spinnerSizeString}
+          height={spinnerSizeString}
+          borderRadius="50%"
+          border="3px solid blue"
+          borderTop="3px solid skyblue"
+          transformOrigin="center"
+          css={css`
+            animation: ${spinAnimation} 1s linear infinite;
+          `}
+          {...innerDivProps}
+        ></Div>
+      </Div>
+    );
+  }
+);
+
+function useMeasureDivScrollHeight(
+  ref: RefObject<HTMLElement | null>
+): number | null {
+  const [scrollHeight, setScrollHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+
+    // Function to update the rect state
+    const updateRect = () => {
+      if (ref.current) {
+        setScrollHeight(ref.current.scrollHeight);
+      }
+    };
+
+    // Initial measurement
+    updateRect();
+
+    // Throttled update function
+    const throttledUpdateRect = _.throttle(updateRect, 100, { trailing: true });
+
+    // Try to use ResizeObserver if available
+    let resizeObserver: ResizeObserver | null = null;
+
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(throttledUpdateRect);
+      resizeObserver.observe(ref.current);
+    } else {
+      // Fallback to window resize event
+      window.addEventListener("resize", throttledUpdateRect);
+    }
+
+    const current = ref.current;
+
+    // Cleanup function
+    return () => {
+      throttledUpdateRect.cancel();
+
+      if (resizeObserver) {
+        if (current) {
+          resizeObserver.unobserve(current);
+        }
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener("resize", throttledUpdateRect);
+      }
+    };
+  }, [ref]);
+
+  return scrollHeight;
 }
 
 // Type for the drag item
@@ -28,29 +147,40 @@ interface DragItem {
 interface DraggableWordProps {
   word: string;
   id: number;
+  used: boolean;
 }
 
-const DraggableWord: React.FC<DraggableWordProps> = ({ word, id }) => {
-  const [{ isDragging }, drag] = useDrag<DragItem, void, { isDragging: boolean }>(() => ({
-    type: 'word',
-    item: { id, word },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
+const DraggableWord: React.FC<DraggableWordProps> = ({ used, word, id }) => {
+  const [{ isDragging }, drag] = useDrag<
+    DragItem,
+    void,
+    { isDragging: boolean }
+  >(
+    () => ({
+      canDrag: !used,
+      type: "word",
+      item: { id, word },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
     }),
-  }));
+    [used]
+  );
 
   return (
     <div
       ref={drag as unknown as RefObject<HTMLDivElement>}
       style={{
-        opacity: isDragging ? 0.5 : 1,
-        cursor: 'move',
-        margin: '5px',
-        padding: '15px', // Increased padding for larger word bank items
-        border: '1px solid #333',
-        borderRadius: '4px',
-        display: 'inline-block',
-        fontSize: '24px', // Larger font size for word bank text
+        opacity: isDragging ? 0.5 : used ? 0.25 : 1,
+        cursor: used ? "not-allowed" : "move",
+        userSelect: "none",
+        pointerEvents: "auto",
+        margin: "5px",
+        padding: "15px", // Increased padding for larger word bank items
+        border: "1px solid #333",
+        borderRadius: "4px",
+        display: "inline-block",
+        fontSize: "18px", // Larger font size for word bank text
       }}
     >
       {word}
@@ -62,6 +192,7 @@ const DraggableWord: React.FC<DraggableWordProps> = ({ word, id }) => {
 interface DroppedResult {
   word: string;
   isCorrect: boolean;
+  dragItemId: string | number;
 }
 
 // Drop zone component for each bounding box area on the image
@@ -69,192 +200,252 @@ interface DropZoneProps {
   annotation: Annotation;
   onDropWord: (annotation: Annotation, item: DragItem) => void;
   droppedResult?: DroppedResult;
+  imageWidth: number;
+  imageHeight: number;
+  viewerScrollHeight: number;
+  id: string | number;
+  setDropped: Dispatch<
+    SetStateAction<Record<string | number, DroppedResult | null>>
+  >;
 }
 
-const DropZone: React.FC<DropZoneProps> = ({ annotation, onDropWord, droppedResult }) => {
-  const [{ isOver }, drop] = useDrop<DragItem, void, { isOver: boolean }>(() => ({
-    accept: 'word',
-    drop: (item: DragItem, monitor: DropTargetMonitor) => {
-      onDropWord(annotation, item);
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-    }),
-  }));
+const DropZone: React.FC<DropZoneProps> = ({
+  imageHeight,
+  annotation,
+  onDropWord,
+  droppedResult,
+  viewerScrollHeight,
+  id,
+  setDropped,
+}) => {
+  const scaleFactor =
+    viewerScrollHeight && imageHeight ? viewerScrollHeight / imageHeight : 0;
+
+  const [{ isOver }, drop] = useDrop<DragItem, void, { isOver: boolean }>(
+    () => ({
+      accept: "word",
+      drop: (item: DragItem) => {
+        onDropWord(annotation, item);
+      },
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+      }),
+    })
+  );
 
   // Use the bbox values directly (with x adjusted in Page component)
-  const [x, y, width, height] = annotation.bbox;
+  const [x, y, w, h] = annotation.bbox;
+
+  const xPx = `${(x - EXPAND_X_PX) * scaleFactor}px`;
+  const yPx = `${(y - EXPAND_Y_PX) * scaleFactor}px`;
+
+  const wPx = `${(w + 2 * EXPAND_X_PX) * scaleFactor}px`;
+  const hPx = `${(h + 2 * EXPAND_Y_PX) * scaleFactor}px`;
 
   // Determine background and border styles based on drop state.
-  let backgroundColor = 'rgba(0, 0, 0, 0.5)';
-  let borderStyle = '2px dashed blue';
+  let backgroundColor = "rgba(255, 255, 255, 1)";
+  let borderStyle = "2px dashed blue";
   if (droppedResult) {
     backgroundColor = droppedResult.isCorrect
-      ? 'rgba(0, 255, 0, 0.7)'
-      : 'rgba(255, 0, 0, 0.7)';
-    borderStyle = '2px solid ' + (droppedResult.isCorrect ? 'green' : 'red');
+      ? "rgba(0, 255, 0, 1)"
+      : "rgba(255, 0, 0,1)";
+    borderStyle = "2px solid " + (droppedResult.isCorrect ? "green" : "red");
   } else if (isOver) {
-    backgroundColor = 'rgba(144,238,144, 0.5)';
+    backgroundColor = "rgba(150,150,244, 1)";
   }
 
   const style: React.CSSProperties = {
-    position: 'absolute',
-    left: x,
-    top: y,
-    width: width,
-    height: height,
+    position: "absolute",
+    left: xPx,
+    top: yPx,
+    width: wPx,
+    height: hPx,
     border: borderStyle,
     backgroundColor,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'all',
-    fontSize: '20px',
-    color: 'white',
-    textShadow: '1px 1px 2px black',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "all",
+    fontSize: "20px",
+    color: "white",
+    textShadow: "1px 1px 2px black",
   };
 
   return (
     <div ref={drop as unknown as RefObject<HTMLDivElement>} style={style}>
-      {droppedResult ? droppedResult.word : ''}
+      {droppedResult ? droppedResult.word : ""}
+
+      {droppedResult && !droppedResult.isCorrect && (
+        <Button
+          position="absolute"
+          userSelect="none"
+          right="-12px"
+          top="-12px"
+          padding="4px"
+          background="white"
+          border="1px solid black"
+          borderRadius="50%"
+          width="24px"
+          height="24px"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          cursor="pointer"
+          onClick={() => {
+            setDropped((prev) => {
+              return Object.fromEntries(
+                Object.entries(prev).filter(([dropZoneId]) => {
+                  return dropZoneId.toString() !== id.toString();
+                })
+              );
+            });
+          }}
+        >
+          <Span fontSize="24px">&times;</Span>
+        </Button>
+      )}
     </div>
   );
 };
 
-interface PageProps {
-  data: PageData;
-  onDrop: (annotation: Annotation, item: DragItem) => void;
-  dropped: Record<string, DroppedResult>;
-}
-
-// The Page component now calculates the image's left offset
-// and adjusts the bounding box positions accordingly.
-const Page: React.FC<PageProps> = ({ data, onDrop, dropped }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
-  const [imageOffset, setImageOffset] = useState(0);
-
-  const updateImageOffset = () => {
-    if (containerRef.current && imageRef.current) {
-      const containerWidth = containerRef.current.clientWidth;
-      const imageWidth = imageRef.current.clientWidth;
-      const offset = (containerWidth - imageWidth) / 2;
-      setImageOffset(offset);
+export default function App() {
+  const [data, setData] = useState<JsonData | null>(null);
+  const viewerRef = useRef<HTMLDivElement | null>(null);
+  const viewerScrollHeight = useMeasureDivScrollHeight(viewerRef);
+  async function loadData() {
+    const response = await fetch(`/${PAGE}.json`);
+    if (response.ok) {
+      setData(await response.json());
     }
-  };
-
-  useEffect(() => {
-    updateImageOffset();
-    window.addEventListener('resize', updateImageOffset);
-    return () => {
-      window.removeEventListener('resize', updateImageOffset);
-    };
-  }, []);
-
-  return (
-    <div
-      ref={containerRef}
-      style={{ position: 'relative', overflow: 'auto', maxHeight: '80vh', width: '100%' }}
-    >
-      <img
-        ref={imageRef}
-        src={data.page_image}
-        alt="Page"
-        onLoad={updateImageOffset}
-        style={{ display: 'block', margin: '0 auto', width: '100%', height: 'auto' }}
-      />
-      {data.annotations.map((ann) => {
-        const key = ann.text + '-' + ann.bbox.join('-');
-        // Adjust the x coordinate of the bounding box by the image offset.
-        const [x, y, width, height] = ann.bbox;
-        const adjustedBBox: BBox = [x/1.3, y/1.3, width/1.3, height/1.3];
-        return (
-          <DropZone
-            key={key}
-            annotation={{ ...ann, bbox: adjustedBBox }}
-            onDropWord={onDrop}
-            droppedResult={dropped[key]}
-          />
-        );
-      })}
-    </div>
-  );
-};
-
-interface WordBankProps {
-  words: { id: number; word: string }[];
-}
-
-// The WordBank component is rendered outside the scrolling image container.
-const WordBank: React.FC<WordBankProps> = ({ words }) => {
-  return (
-    <div
-      style={{
-        textAlign: 'center',
-        padding: '20px',
-        borderTop: '1px solid #ccc',
-      }}
-    >
-      {words.map((item) => (
-        <DraggableWord key={item.id} word={item.word} id={item.id} />
-      ))}
-    </div>
-  );
-};
-
-const App: React.FC = () => {
-  const [pageData, setPageData] = useState<PageData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [dropped, setDropped] = useState<Record<string, DroppedResult>>({});
-
-  useEffect(() => {
-    fetch('/page_006.json')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch JSON data');
-        }
-        return response.json();
-      })
-      .then((data: PageData) => setPageData(data))
-      .catch((err) => setError(err.message));
-  }, []);
-
-  if (error) {
-    return <div>Error loading page data: {error}</div>;
   }
+  useEffect(() => {
+    loadData();
+  });
+  const wordBank = data ? data.annotations.map((ann) => ann.text) : null;
+  const ready = data && viewerScrollHeight && wordBank;
 
-  if (!pageData) {
-    return <div>Loading...</div>;
-  }
+  const [dropped, setDropped] = useState<
+    Record<string | number, DroppedResult | null>
+  >({});
 
-  const wordList = pageData.annotations.map((ann, idx) => ({ id: idx, word: ann.text }));
-
-  const handleDrop = (annotation: Annotation, item: DragItem) => {
-    const key = annotation.text + '-' + annotation.bbox.join('-');
-    const isCorrect =
-      item.word.trim().toLowerCase() === annotation.text.trim().toLowerCase();
-    setDropped((prev) => ({ ...prev, [key]: { word: item.word, isCorrect } }));
-  };
-
+  const dingBuzzer = useDingBuzzer();
   return (
     <DndProvider backend={HTML5Backend}>
-      <div
-        className="App"
-        style={{
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
+      <Div
+        width="100dvw"
+        height="100dvh"
+        overflow="hidden"
+        display="grid"
+        gridTemplateRows="1fr"
+        gridTemplateColumns="60dvw 1fr"
       >
-        <h1 style={{ textAlign: 'center' }}>Drag and Drop Literacy Exercise</h1>
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          <Page data={pageData} onDrop={handleDrop} dropped={dropped} />
-        </div>
-        <WordBank words={wordList} />
-      </div>
+        <Div ref={viewerRef} overflowY={"auto"} position="relative">
+          <Img
+            src={`/${PAGE}.png`}
+            position="relative"
+            cssWidth="100%"
+            cssHeight="auto"
+            objectFit="contain"
+            margin="0"
+            padding="0"
+          />
+          {ready && (
+            <>
+              {data.annotations.map((ann, i) => {
+                return (
+                  <DropZone
+                    id={i}
+                    setDropped={setDropped}
+                    imageWidth={data.width}
+                    imageHeight={data.height}
+                    viewerScrollHeight={viewerScrollHeight}
+                    key={i}
+                    annotation={{ ...ann }}
+                    onDropWord={(ann, item) => {
+                      const isCorrect= ann.text === item.word
+                      if (isCorrect) {
+                        dingBuzzer.playDing()
+                      } else {
+                        dingBuzzer.playBuzzer();
+                      }
+                      setDropped((prev) => ({
+                        ...prev,
+                        [i]: {
+                          word: item.word,
+                          isCorrect: ann.text === item.word,
+                          dragItemId: item.id,
+                        },
+                      }));
+                    }}
+                    droppedResult={dropped[i] ?? undefined}
+                  />
+                );
+              })}
+            </>
+          )}
+
+          <Div
+            position="fixed"
+            top="0"
+            left="0"
+            width="60dvw"
+            height="100dvh"
+            cursor="progress"
+            background="rgba(0,0,0,0.5)"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            opacity={!ready ? 1 : 0}
+            pointerEvents={!ready ? "auto" : "none"}
+            transition="opacity 0.25s ease-in-out"
+          >
+            <LoadingSpinner
+              size="2.5rem"
+              spinnerSize="2.25rem"
+              background="white"
+              borderRadius="0.25rem"
+            />
+          </Div>
+        </Div>
+        <Div
+          display="flex"
+          flexDirection="row"
+          flexWrap="wrap"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Div
+            display="flex"
+            flexDirection="row"
+            flexWrap="wrap"
+            alignItems="center"
+            justifyContent="center"
+            width="100%"
+          >
+            {wordBank && (
+              <>
+                {wordBank.map((word, i) => (
+                  <DraggableWord
+                    key={i}
+                    word={word}
+                    id={i}
+                    used={
+                      //  True if exists any drop result for which dragItemId is equal to i
+                      dropped &&
+                      Object.values(dropped).some((result) => {
+                        if (!result) {
+                          return false;
+                        }
+                        return result.dragItemId === i;
+                      })
+                    }
+                  />
+                ))}
+              </>
+            )}
+          </Div>
+        </Div>
+      </Div>
     </DndProvider>
   );
-};
-
-export default App;
+}

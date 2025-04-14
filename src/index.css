@@ -1,3 +1,7 @@
+html {
+  font-size: 16px;
+}
+
 /* A basic CSS reset */
 * {
   margin: 0;

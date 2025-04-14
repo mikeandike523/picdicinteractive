@@ -1,3 +1,5 @@
 * text eol=lf
-public/page_006.png filter=lfs diff=lfs merge=lfs -text
 public/page_006.json filter=lfs diff=lfs merge=lfs -text
+public/page_006.png filter=lfs diff=lfs merge=lfs -text
+public/right.mp3 filter=lfs diff=lfs merge=lfs -text
+public/wrong.mp3 filter=lfs diff=lfs merge=lfs -text

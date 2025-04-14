@@ -15,12 +15,19 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    "jsxImportSource": "@emotion/react",
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
+
+    
+
+
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/App.old.tsx"]
 }
