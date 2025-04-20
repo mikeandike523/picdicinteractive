@@ -1,6 +1,9 @@
 import { useRef } from "react";
 
 export default function useDingBuzzer() {
+
+
+
   const rightSoundRef = useRef(new Audio("/right.mp3"));
   const wrongSoundRef = useRef(new Audio("/wrong.mp3"));
 

@@ -5,16 +5,17 @@ import {
   forwardRef,
   RefObject,
   SetStateAction,
+  useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { useDrag, useDrop } from "react-dnd";
+import { DndProvider } from "react-dnd-multi-backend";
+import { HTML5toTouch } from "rdndmb-html5-to-touch"; // or any other pipeline
 import { Button, Div, DivProps, Img, Span } from "style-props-html";
 import useDingBuzzer from "./hooks/useDingBuzzer";
-
-const PAGE = "page_006";
+import { useParams } from "react-router";
 
 // The amounts of extra room on each side to add to the bboxes/drop targets to make them a little less tight
 // OCR was used to get bounding boxes and the boxes are too tight to look good
@@ -169,8 +170,10 @@ const DraggableWord: React.FC<DraggableWordProps> = ({ used, word, id }) => {
 
   return (
     <div
+      className="draggable"
       ref={drag as unknown as RefObject<HTMLDivElement>}
       style={{
+        touchAction: "none" /* Prevent scrolling while dragging */,
         opacity: isDragging ? 0.5 : used ? 0.25 : 1,
         cursor: used ? "not-allowed" : "move",
         userSelect: "none",
@@ -309,18 +312,22 @@ const DropZone: React.FC<DropZoneProps> = ({
 };
 
 export default function App() {
+  const pageNumber = Number(useParams().pageNumber!);
   const [data, setData] = useState<JsonData | null>(null);
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const viewerScrollHeight = useMeasureDivScrollHeight(viewerRef);
-  async function loadData() {
-    const response = await fetch(`/${PAGE}.json`);
-    if (response.ok) {
-      setData(await response.json());
-    }
-  }
+  const loadData = useCallback(
+    async function loadData() {
+      const response = await fetch(`/pages/annotations/${pageNumber}.json`);
+      if (response.ok) {
+        setData(await response.json());
+      }
+    },
+    [pageNumber]
+  );
   useEffect(() => {
     loadData();
-  });
+  }, [loadData]);
   const wordBank = data ? data.annotations.map((ann) => ann.text) : null;
   const ready = data && viewerScrollHeight && wordBank;
 
@@ -330,7 +337,7 @@ export default function App() {
 
   const dingBuzzer = useDingBuzzer();
   return (
-    <DndProvider backend={HTML5Backend}>
+    <DndProvider options={HTML5toTouch}>
       <Div
         width="100dvw"
         height="100dvh"
@@ -341,7 +348,7 @@ export default function App() {
       >
         <Div ref={viewerRef} overflowY={"auto"} position="relative">
           <Img
-            src={`/${PAGE}.png`}
+            src={`/pages/images/${pageNumber}.png`}
             position="relative"
             cssWidth="100%"
             cssHeight="auto"
@@ -362,9 +369,9 @@ export default function App() {
                     key={i}
                     annotation={{ ...ann }}
                     onDropWord={(ann, item) => {
-                      const isCorrect= ann.text === item.word
+                      const isCorrect = ann.text === item.word;
                       if (isCorrect) {
-                        dingBuzzer.playDing()
+                        dingBuzzer.playDing();
                       } else {
                         dingBuzzer.playBuzzer();
                       }
