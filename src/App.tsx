@@ -1,6 +1,8 @@
-import { css, keyframes } from "@emotion/react";
+import { css } from "@emotion/react";
 import _ from "lodash";
+import { HTML5toTouch } from "rdndmb-html5-to-touch"; // or any other pipeline
 import {
+  ChangeEvent,
   Dispatch,
   forwardRef,
   RefObject,
@@ -12,12 +14,11 @@ import {
 } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { DndProvider } from "react-dnd-multi-backend";
-import { HTML5toTouch } from "rdndmb-html5-to-touch"; // or any other pipeline
-import { Button, Div, DivProps, H1, Img, Span } from "style-props-html";
+import { MdArrowBack, MdArrowForward, MdHome } from "react-icons/md";
+import { useNavigate, useParams } from "react-router";
+import { Button, Div, DivProps, H1, Img, Select, Span } from "style-props-html";
 import useDingBuzzer from "./hooks/useDingBuzzer";
-import { useParams } from "react-router";
-import { MdArrowBack, MdArrowForward } from "react-icons/md";
-import { useNavigate } from "react-router";
+import LoadingSpinner from "./components/LoadingSpinner";
 
 // The amounts of extra room on each side to add to the bboxes/drop targets to make them a little less tight
 // OCR was used to get bounding boxes and the boxes are too tight to look good
@@ -37,56 +38,6 @@ interface JsonData {
   height: number;
   annotations: Annotation[];
 }
-
-interface LoadingSpinnerProps extends DivProps {
-  size: number | string;
-  spinnerSize?: number | string;
-  innerDivProps?: Partial<DivProps>;
-}
-
-const spinAnimation = keyframes`
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-`;
-
-const LoadingSpinner = forwardRef<HTMLDivElement, LoadingSpinnerProps>(
-  function LoadingSpinner(
-    { size, spinnerSize = size, innerDivProps = {}, ...rest },
-    ref
-  ) {
-    const sizeString = typeof size === "number" ? `${size}px` : size;
-    const spinnerSizeString =
-      typeof spinnerSize === "number" ? `${spinnerSize}px` : spinnerSize;
-    return (
-      <Div
-        ref={ref}
-        width={sizeString}
-        height={sizeString}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        {...rest}
-      >
-        <Div
-          width={spinnerSizeString}
-          height={spinnerSizeString}
-          borderRadius="50%"
-          border="3px solid blue"
-          borderTop="3px solid skyblue"
-          transformOrigin="center"
-          css={css`
-            animation: ${spinAnimation} 1s linear infinite;
-          `}
-          {...innerDivProps}
-        ></Div>
-      </Div>
-    );
-  }
-);
 
 function useMeasureDivScrollHeight(
   ref: RefObject<HTMLElement | null>
@@ -341,7 +292,9 @@ interface BookPageNavbarProps extends DivProps {
 
 const BookPageNavbar = forwardRef<HTMLDivElement, BookPageNavbarProps>(
   function BookPageNavbar({ pageNumber, catalogData, ...rest }, ref) {
-    const navigate = useNavigate();
+    const navigate = (url: string) => {
+      window.location.href = url;
+    };
     const chapterName = catalogData[pageNumber] ?? `Page ${pageNumber}`;
     const availablePageNumbers = Object.keys(catalogData).map(Number);
     const isFirst = pageNumber === availablePageNumbers[0];
@@ -360,30 +313,70 @@ const BookPageNavbar = forwardRef<HTMLDivElement, BookPageNavbarProps>(
         padding="0.5rem"
         {...rest}
       >
-        <Div flex="0">
-          <Button
-            disabled={isFirst}
-            css={iconButtonCss}
-            onClick={() => {
-              navigate(`/${pageNumber - 1}`);
-            }}
+        <Div flex={1} display="flex" flexDirection="row" alignItems="center">
+          <Div
+            flex={1}
+            display="flex"
+            flexDirection="row"
+            alignItems="center"
+            gap="0.5rem"
           >
-            <MdArrowBack fontSize="1rem" color="teal" />
-          </Button>
-        </Div>
-        <H1 fontSize="1.5rem" textAlign="center" fontWeight="bold" flex={1}>
-          {chapterName}
-        </H1>
-        <Div flex="0">
-          <Button
-            disabled={isLast}
-            css={iconButtonCss}
-            onClick={() => {
-              navigate(`/${pageNumber + 1}`);
-            }}
+            <Button
+              disabled={isFirst}
+              css={iconButtonCss}
+              onClick={() => {
+                navigate(`/${pageNumber - 1}`);
+              }}
+            >
+              <MdArrowBack fontSize="1rem" color="teal" />
+            </Button>
+            <Button
+              css={iconButtonCss}
+              onClick={() => {
+                navigate(`/`);
+              }}
+            >
+              <MdHome fontSize="1rem" color="teal" />
+            </Button>
+            <Select
+              marginLeft="auto"
+              marginRight="0.5rem"
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                navigate(`/${e.target.value}`);
+              }}
+            >
+              {availablePageNumbers.map((pageNumberItem) => (
+                <option
+                  key={pageNumberItem}
+                  value={pageNumberItem}
+                  selected={pageNumberItem === pageNumber}
+                >
+                  {pageNumberItem}
+                </option>
+              ))}
+            </Select>
+          </Div>
+          <H1
+            fontSize="1.5rem"
+            textAlign="center"
+            fontWeight="bold"
+            flex={0}
+            whiteSpace="nowrap"
           >
-            <MdArrowForward fontSize="1rem" color="teal" />
-          </Button>
+            {chapterName}
+          </H1>
+          <Div flex={1} display="flex" flexDirection="row" alignItems="center">
+            <Button
+              disabled={isLast}
+              css={iconButtonCss}
+              onClick={() => {
+                navigate(`/${pageNumber + 1}`);
+              }}
+              marginLeft="auto"
+            >
+              <MdArrowForward fontSize="1rem" color="teal" />
+            </Button>
+          </Div>
         </Div>
       </Div>
     );
@@ -433,87 +426,95 @@ export default function App() {
         gridTemplateRows="1fr"
         gridTemplateColumns="60dvw 1fr"
       >
-        <Div ref={viewerRef} overflowY={"auto"} position="relative">
+        <Div
+          display="grid"
+          height="100dvh"
+          gridTemplateRows="auto 1fr"
+          gridTemplateColumns="1fr"
+        >
           {catalogData && (
-            <Div position="sticky" top="0" left="0" zIndex={3}>
+            <Div zIndex={3}>
               <BookPageNavbar
                 catalogData={catalogData}
                 pageNumber={pageNumber}
               />
             </Div>
           )}
-          <Div position="relative" width="100%" height="auto">
-            <Img
-              zIndex={1}
-              src={`/pages/images/${pageNumber}.png`}
-              position="relative"
-              cssWidth="100%"
-              cssHeight="auto"
-              objectFit="contain"
-              margin="0"
-              padding="0"
-            />
+          <Div ref={viewerRef} overflowY={"auto"} position="relative">
+            <Div position="relative" width="100%" height="auto">
+              <Img
+                zIndex={1}
+                src={`/pages/images/${pageNumber}.png`}
+                position="relative"
+                cssWidth="100%"
+                cssHeight="auto"
+                objectFit="contain"
+                margin="0"
+                padding="0"
+              />
 
-            {ready && (
-              <>
-                {data.annotations.map((ann, i) => {
-                  return (
-                    <DropZone
-                      id={i}
-                      setDropped={setDropped}
-                      imageWidth={data.width}
-                      imageHeight={data.height}
-                      viewerScrollHeight={viewerScrollHeight}
-                      key={i}
-                      annotation={{ ...ann }}
-                      onDropWord={(ann, item) => {
-                        const isCorrect = ann.text === item.word;
-                        if (isCorrect) {
-                          dingBuzzer.playDing();
-                        } else {
-                          dingBuzzer.playBuzzer();
-                        }
-                        setDropped((prev) => ({
-                          ...prev,
-                          [i]: {
-                            word: item.word,
-                            isCorrect: ann.text === item.word,
-                            dragItemId: item.id,
-                          },
-                        }));
-                      }}
-                      droppedResult={dropped[i] ?? undefined}
-                    />
-                  );
-                })}
-              </>
-            )}
-          </Div>
+              {ready && (
+                <>
+                  {data.annotations.map((ann, i) => {
+                    return (
+                      <DropZone
+                        id={i}
+                        setDropped={setDropped}
+                        imageWidth={data.width}
+                        imageHeight={data.height}
+                        viewerScrollHeight={viewerScrollHeight}
+                        key={i}
+                        annotation={{ ...ann }}
+                        onDropWord={(ann, item) => {
+                          const isCorrect = ann.text === item.word;
+                          if (isCorrect) {
+                            dingBuzzer.playDing();
+                          } else {
+                            dingBuzzer.playBuzzer();
+                          }
+                          setDropped((prev) => ({
+                            ...prev,
+                            [i]: {
+                              word: item.word,
+                              isCorrect: ann.text === item.word,
+                              dragItemId: item.id,
+                            },
+                          }));
+                        }}
+                        droppedResult={dropped[i] ?? undefined}
+                      />
+                    );
+                  })}
+                </>
+              )}
+            </Div>
 
-          <Div
-            zIndex={4}
-            position="fixed"
-            top="0"
-            left="0"
-            width="60dvw"
-            height="100dvh"
-            cursor="progress"
-            background="rgba(0,0,0,0.5)"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            opacity={!ready ? 1 : 0}
-            pointerEvents={!ready ? "auto" : "none"}
-            transition="opacity 0.25s ease-in-out"
-          >
-            <LoadingSpinner
-              size="2.5rem"
-              spinnerSize="2.25rem"
-              background="white"
-              borderRadius="0.25rem"
-            />
+            <Div
+              zIndex={4}
+              position="fixed"
+              top="0"
+              left="0"
+              width="60dvw"
+              height="100dvh"
+              cursor="progress"
+              background="rgba(0,0,0,0.5)"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              opacity={!ready ? 1 : 0}
+              pointerEvents={!ready ? "auto" : "none"}
+              transition="opacity 0.25s ease-in-out"
+            >
+              <LoadingSpinner
+                size="2.5rem"
+                spinnerSize="2.25rem"
+                background="white"
+                borderRadius="0.25rem"
+              />
+            </Div>
           </Div>
         </Div>
+
         <Div
           display="flex"
           flexDirection="row"
