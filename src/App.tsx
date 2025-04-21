@@ -15,10 +15,10 @@ import {
 import { useDrag, useDrop } from "react-dnd";
 import { DndProvider } from "react-dnd-multi-backend";
 import { MdArrowBack, MdArrowForward, MdHome } from "react-icons/md";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { Button, Div, DivProps, H1, Img, Select, Span } from "style-props-html";
-import useDingBuzzer from "./hooks/useDingBuzzer";
 import LoadingSpinner from "./components/LoadingSpinner";
+import useDingBuzzer from "./hooks/useDingBuzzer";
 
 // The amounts of extra room on each side to add to the bboxes/drop targets to make them a little less tight
 // OCR was used to get bounding boxes and the boxes are too tight to look good
