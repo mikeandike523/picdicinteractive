@@ -394,11 +394,11 @@ export default function App() {
 
   const loadData = useCallback(
     async function loadData() {
-      const response = await fetch(`/pages/annotations/${pageNumber}.json`);
+      const response = await fetch(`/static/pages/annotations/${pageNumber}.json`);
       if (response.ok) {
         setData(await response.json());
       }
-      const response2 = await fetch("/pages/pageList.json");
+      const response2 = await fetch("/static/pages/pageList.json");
       if (response2.ok) {
         setCatalogData(await response2.json());
       }
@@ -444,7 +444,7 @@ export default function App() {
             <Div position="relative" width="100%" height="auto">
               <Img
                 zIndex={1}
-                src={`/pages/images/${pageNumber}.png`}
+                src={`/static/pages/images/${pageNumber}.png`}
                 position="relative"
                 cssWidth="100%"
                 cssHeight="auto"

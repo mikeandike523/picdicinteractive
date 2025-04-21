@@ -4,8 +4,8 @@ export default function useDingBuzzer() {
 
 
 
-  const rightSoundRef = useRef(new Audio("/right.mp3"));
-  const wrongSoundRef = useRef(new Audio("/wrong.mp3"));
+  const rightSoundRef = useRef(new Audio("/static/right.mp3"));
+  const wrongSoundRef = useRef(new Audio("/static/wrong.mp3"));
 
   const playDing = () => {
     rightSoundRef.current.currentTime = 0;

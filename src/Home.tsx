@@ -9,7 +9,7 @@ type CatalogData = Record<string, string | undefined>;
 export default function Home() {
   const [catalogData, setCatalogData] = useState<CatalogData | null>(null);
   const loadData = useCallback(async function loadData() {
-    const response2 = await fetch("/pages/pageList.json");
+    const response2 = await fetch("/static/pages/pageList.json");
     if (response2.ok) {
       setCatalogData(await response2.json());
     }
