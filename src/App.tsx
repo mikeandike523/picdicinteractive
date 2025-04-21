@@ -9,6 +9,7 @@ import {
   SetStateAction,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -19,6 +20,8 @@ import { useParams } from "react-router";
 import { Button, Div, DivProps, H1, Img, Select, Span } from "style-props-html";
 import LoadingSpinner from "./components/LoadingSpinner";
 import useDingBuzzer from "./hooks/useDingBuzzer";
+import useTransformJsonData from "./hooks/useTransformData";
+import shuffleArray from "shuffle-array"
 
 // The amounts of extra room on each side to add to the bboxes/drop targets to make them a little less tight
 // OCR was used to get bounding boxes and the boxes are too tight to look good
@@ -39,10 +42,11 @@ interface JsonData {
   annotations: Annotation[];
 }
 
-function useMeasureDivScrollHeight(
+
+function useMeasureDivClientWidth(
   ref: RefObject<HTMLElement | null>
 ): number | null {
-  const [scrollHeight, setScrollHeight] = useState<number | null>(null);
+  const [clientWidth, setClientWidth] = useState<number | null>(null);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -50,7 +54,7 @@ function useMeasureDivScrollHeight(
     // Function to update the rect state
     const updateRect = () => {
       if (ref.current) {
-        setScrollHeight(ref.current.scrollHeight);
+        setClientWidth(ref.current.clientWidth);
       }
     };
 
@@ -88,7 +92,7 @@ function useMeasureDivScrollHeight(
     };
   }, [ref]);
 
-  return scrollHeight;
+  return clientWidth;
 }
 
 // Type for the drag item
@@ -158,7 +162,8 @@ interface DropZoneProps {
   droppedResult?: DroppedResult;
   imageWidth: number;
   imageHeight: number;
-  viewerScrollHeight: number;
+  // viewerScrollHeight: number;
+  viewerClientWidth: number;
   id: string | number;
   setDropped: Dispatch<
     SetStateAction<Record<string | number, DroppedResult | null>>
@@ -166,16 +171,20 @@ interface DropZoneProps {
 }
 
 const DropZone: React.FC<DropZoneProps> = ({
-  imageHeight,
+  imageWidth,
+  // imageHeight,
   annotation,
   onDropWord,
   droppedResult,
-  viewerScrollHeight,
+  // viewerScrollHeight,
+  viewerClientWidth,
   id,
   setDropped,
 }) => {
-  const scaleFactor =
-    viewerScrollHeight && imageHeight ? viewerScrollHeight / imageHeight : 0;
+  // const scaleFactor =
+  //   viewerScrollHeight && imageHeight ? viewerScrollHeight / imageHeight : 0;
+
+  const scaleFactor = viewerClientWidth && imageWidth? viewerClientWidth / imageWidth : 0;
 
   const [{ isOver }, drop] = useDrop<DragItem, void, { isOver: boolean }>(
     () => ({
@@ -384,19 +393,41 @@ const BookPageNavbar = forwardRef<HTMLDivElement, BookPageNavbarProps>(
 );
 
 export default function App() {
+
+  // Check for render loops just in case
+  console.log("App render");
+
   const pageNumber = Number(useParams().pageNumber!);
-  const [data, setData] = useState<JsonData | null>(null);
+  // const [data, setData] = useState<JsonData | null>(null);
+
+  const [rawData, setRawData] = useState<JsonData | null>(null);
+
+  const transformedData = useTransformJsonData(rawData);
+  
+  const data = useMemo(() => {
+    if (!transformedData) {
+      return null;
+    }
+    const randomizedAnnotations = shuffleArray(transformedData.annotations);
+    return {
+      ...transformedData,
+      annotations: randomizedAnnotations,
+    }
+  },[transformedData])
+
+
   const [catalogData, setCatalogData] = useState<Record<number, string> | null>(
     null
   );
   const viewerRef = useRef<HTMLDivElement | null>(null);
-  const viewerScrollHeight = useMeasureDivScrollHeight(viewerRef);
+  // const viewerScrollHeight = useMeasureDivScrollHeight(viewerRef);
+  const viewerClientWidth = useMeasureDivClientWidth(viewerRef);
 
   const loadData = useCallback(
     async function loadData() {
       const response = await fetch(`/static/pages/annotations/${pageNumber}.json`);
       if (response.ok) {
-        setData(await response.json());
+        setRawData(await response.json());
       }
       const response2 = await fetch("/static/pages/pageList.json");
       if (response2.ok) {
@@ -409,7 +440,8 @@ export default function App() {
     loadData();
   }, [loadData]);
   const wordBank = data ? data.annotations.map((ann) => ann.text) : null;
-  const ready = data && viewerScrollHeight && wordBank;
+  // const ready = data && viewerScrollHeight && wordBank;
+  const ready = data && viewerClientWidth && wordBank;
 
   const [dropped, setDropped] = useState<
     Record<string | number, DroppedResult | null>
@@ -462,7 +494,8 @@ export default function App() {
                         setDropped={setDropped}
                         imageWidth={data.width}
                         imageHeight={data.height}
-                        viewerScrollHeight={viewerScrollHeight}
+                        // viewerScrollHeight={viewerScrollHeight}
+                        viewerClientWidth={viewerClientWidth}
                         key={i}
                         annotation={{ ...ann }}
                         onDropWord={(ann, item) => {
