@@ -1,0 +1,123 @@
+{
+  "annotations": [
+    {
+      "bbox": [
+        1933,
+        375,
+        200,
+        67
+      ],
+      "text": "drawing"
+    },
+    {
+      "bbox": [
+        264,
+        684,
+        247,
+        55
+      ],
+      "text": "blackboard"
+    },
+    {
+      "bbox": [
+        1822,
+        1110,
+        357,
+        84
+      ],
+      "text": "looking at things"
+    },
+    {
+      "bbox": [
+        198,
+        1407,
+        171,
+        53
+      ],
+      "text": "teacher"
+    },
+    {
+      "bbox": [
+        1742,
+        1418,
+        347,
+        85
+      ],
+      "text": "making models"
+    },
+    {
+      "bbox": [
+        1983,
+        1768,
+        178,
+        61
+      ],
+      "text": "painting"
+    },
+    {
+      "bbox": [
+        1751,
+        2343,
+        445,
+        85
+      ],
+      "text": "playing with puppets"
+    },
+    {
+      "bbox": [
+        2045,
+        2664,
+        170,
+        65
+      ],
+      "text": "reading"
+    },
+    {
+      "bbox": [
+        330,
+        3117,
+        150,
+        50
+      ],
+      "text": "socket"
+    },
+    {
+      "bbox": [
+        1975,
+        3231,
+        160,
+        82
+      ],
+      "text": "smiling"
+    },
+    {
+      "bbox": [
+        1538,
+        3249,
+        150,
+        63
+      ],
+      "text": "talking"
+    },
+    {
+      "bbox": [
+        1129,
+        3234,
+        150,
+        88
+      ],
+      "text": "writing"
+    },
+    {
+      "bbox": [
+        559,
+        3289,
+        336,
+        66
+      ],
+      "text": "wastepaper bin"
+    }
+  ],
+  "width": 2481,
+  "height": 3509
+}

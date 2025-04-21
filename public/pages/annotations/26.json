@@ -1,0 +1,42 @@
+{
+  "annotations": [
+    {
+      "bbox": [
+        1036,
+        1411,
+        33,
+        76
+      ],
+      "text": "LIBRARY"
+    },
+    {
+      "bbox": [
+        1154,
+        1486,
+        326,
+        115
+      ],
+      "text": "marking the books"
+    },
+    {
+      "bbox": [
+        770,
+        2221,
+        335,
+        62
+      ],
+      "text": "teachers room"
+    },
+    {
+      "bbox": [
+        911,
+        3336,
+        87,
+        52
+      ],
+      "text": "hall"
+    }
+  ],
+  "width": 2481,
+  "height": 3509
+}

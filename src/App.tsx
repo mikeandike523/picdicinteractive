@@ -13,9 +13,11 @@ import {
 import { useDrag, useDrop } from "react-dnd";
 import { DndProvider } from "react-dnd-multi-backend";
 import { HTML5toTouch } from "rdndmb-html5-to-touch"; // or any other pipeline
-import { Button, Div, DivProps, Img, Span } from "style-props-html";
+import { Button, Div, DivProps, H1, Img, Span } from "style-props-html";
 import useDingBuzzer from "./hooks/useDingBuzzer";
 import { useParams } from "react-router";
+import { MdArrowBack, MdArrowForward } from "react-icons/md";
+import { useNavigate } from "react-router";
 
 // The amounts of extra room on each side to add to the bboxes/drop targets to make them a little less tight
 // OCR was used to get bounding boxes and the boxes are too tight to look good
@@ -258,6 +260,7 @@ const DropZone: React.FC<DropZoneProps> = ({
   }
 
   const style: React.CSSProperties = {
+    zIndex: 2,
     position: "absolute",
     left: xPx,
     top: yPx,
@@ -311,16 +314,100 @@ const DropZone: React.FC<DropZoneProps> = ({
   );
 };
 
+const iconButtonCss = css`
+  width: 1.5rem;
+  height: 1.5rem;
+  background: white;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  &:not(:disabled):hover {
+  }
+  &:not(:disabled):active {
+  }
+  &:disabled {
+    cursor: not-allowed;
+    background: lightgray;
+  }
+`;
+
+interface BookPageNavbarProps extends DivProps {
+  catalogData: Record<number, string | undefined>;
+  pageNumber: number;
+}
+
+const BookPageNavbar = forwardRef<HTMLDivElement, BookPageNavbarProps>(
+  function BookPageNavbar({ pageNumber, catalogData, ...rest }, ref) {
+    const navigate = useNavigate();
+    const chapterName = catalogData[pageNumber] ?? `Page ${pageNumber}`;
+    const availablePageNumbers = Object.keys(catalogData).map(Number);
+    const isFirst = pageNumber === availablePageNumbers[0];
+    const isLast =
+      pageNumber === availablePageNumbers[availablePageNumbers.length - 1];
+    return (
+      <Div
+        ref={ref}
+        width="100%"
+        background="teal"
+        color="white"
+        display="flex"
+        flexDirection="row"
+        alignItems="center"
+        justifyContent="center"
+        padding="0.5rem"
+        {...rest}
+      >
+        <Div flex="0">
+          <Button
+            disabled={isFirst}
+            css={iconButtonCss}
+            onClick={() => {
+              navigate(`/${pageNumber - 1}`);
+            }}
+          >
+            <MdArrowBack fontSize="1rem" color="teal" />
+          </Button>
+        </Div>
+        <H1 fontSize="1.5rem" textAlign="center" fontWeight="bold" flex={1}>
+          {chapterName}
+        </H1>
+        <Div flex="0">
+          <Button
+            disabled={isLast}
+            css={iconButtonCss}
+            onClick={() => {
+              navigate(`/${pageNumber + 1}`);
+            }}
+          >
+            <MdArrowForward fontSize="1rem" color="teal" />
+          </Button>
+        </Div>
+      </Div>
+    );
+  }
+);
+
 export default function App() {
   const pageNumber = Number(useParams().pageNumber!);
   const [data, setData] = useState<JsonData | null>(null);
+  const [catalogData, setCatalogData] = useState<Record<number, string> | null>(
+    null
+  );
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const viewerScrollHeight = useMeasureDivScrollHeight(viewerRef);
+
   const loadData = useCallback(
     async function loadData() {
       const response = await fetch(`/pages/annotations/${pageNumber}.json`);
       if (response.ok) {
         setData(await response.json());
+      }
+      const response2 = await fetch("/pages/pageList.json");
+      if (response2.ok) {
+        setCatalogData(await response2.json());
       }
     },
     [pageNumber]
@@ -347,51 +434,64 @@ export default function App() {
         gridTemplateColumns="60dvw 1fr"
       >
         <Div ref={viewerRef} overflowY={"auto"} position="relative">
-          <Img
-            src={`/pages/images/${pageNumber}.png`}
-            position="relative"
-            cssWidth="100%"
-            cssHeight="auto"
-            objectFit="contain"
-            margin="0"
-            padding="0"
-          />
-          {ready && (
-            <>
-              {data.annotations.map((ann, i) => {
-                return (
-                  <DropZone
-                    id={i}
-                    setDropped={setDropped}
-                    imageWidth={data.width}
-                    imageHeight={data.height}
-                    viewerScrollHeight={viewerScrollHeight}
-                    key={i}
-                    annotation={{ ...ann }}
-                    onDropWord={(ann, item) => {
-                      const isCorrect = ann.text === item.word;
-                      if (isCorrect) {
-                        dingBuzzer.playDing();
-                      } else {
-                        dingBuzzer.playBuzzer();
-                      }
-                      setDropped((prev) => ({
-                        ...prev,
-                        [i]: {
-                          word: item.word,
-                          isCorrect: ann.text === item.word,
-                          dragItemId: item.id,
-                        },
-                      }));
-                    }}
-                    droppedResult={dropped[i] ?? undefined}
-                  />
-                );
-              })}
-            </>
+          {catalogData && (
+            <Div position="sticky" top="0" left="0" zIndex={3}>
+              <BookPageNavbar
+                catalogData={catalogData}
+                pageNumber={pageNumber}
+              />
+            </Div>
           )}
+          <Div position="relative" width="100%" height="auto">
+            <Img
+              zIndex={1}
+              src={`/pages/images/${pageNumber}.png`}
+              position="relative"
+              cssWidth="100%"
+              cssHeight="auto"
+              objectFit="contain"
+              margin="0"
+              padding="0"
+            />
+
+            {ready && (
+              <>
+                {data.annotations.map((ann, i) => {
+                  return (
+                    <DropZone
+                      id={i}
+                      setDropped={setDropped}
+                      imageWidth={data.width}
+                      imageHeight={data.height}
+                      viewerScrollHeight={viewerScrollHeight}
+                      key={i}
+                      annotation={{ ...ann }}
+                      onDropWord={(ann, item) => {
+                        const isCorrect = ann.text === item.word;
+                        if (isCorrect) {
+                          dingBuzzer.playDing();
+                        } else {
+                          dingBuzzer.playBuzzer();
+                        }
+                        setDropped((prev) => ({
+                          ...prev,
+                          [i]: {
+                            word: item.word,
+                            isCorrect: ann.text === item.word,
+                            dragItemId: item.id,
+                          },
+                        }));
+                      }}
+                      droppedResult={dropped[i] ?? undefined}
+                    />
+                  );
+                })}
+              </>
+            )}
+          </Div>
 
           <Div
+            zIndex={4}
             position="fixed"
             top="0"
             left="0"

@@ -1,0 +1,105 @@
+{
+  "annotations": [
+    {
+      "bbox": [
+        1339,
+        271,
+        291,
+        108
+      ],
+      "text": "STATION"
+    },
+    {
+      "bbox": [
+        994,
+        1598,
+        183,
+        80
+      ],
+      "text": "CAFE"
+    },
+    {
+      "bbox": [
+        689,
+        2319,
+        153,
+        43
+      ],
+      "text": "corner"
+    },
+    {
+      "bbox": [
+        1969,
+        2636,
+        254,
+        66
+      ],
+      "text": "traffic lights"
+    },
+    {
+      "bbox": [
+        1045,
+        2668,
+        185,
+        62
+      ],
+      "text": "postbox"
+    },
+    {
+      "bbox": [
+        580,
+        2698,
+        161,
+        53
+      ],
+      "text": "market"
+    },
+    {
+      "bbox": [
+        1399,
+        2728,
+        319,
+        65
+      ],
+      "text": "telephone box"
+    },
+    {
+      "bbox": [
+        1269,
+        3104,
+        269,
+        65
+      ],
+      "text": "telephoning"
+    },
+    {
+      "bbox": [
+        1028,
+        3253,
+        211,
+        66
+      ],
+      "text": "shopping"
+    },
+    {
+      "bbox": [
+        1847,
+        3273,
+        359,
+        67
+      ],
+      "text": "waiting for a bus"
+    },
+    {
+      "bbox": [
+        363,
+        3333,
+        384,
+        67
+      ],
+      "text": "running for a train"
+    }
+  ],
+  "width": 2481,
+  "height": 3509
+}

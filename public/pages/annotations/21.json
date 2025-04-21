@@ -1,0 +1,123 @@
+{
+  "annotations": [
+    {
+      "bbox": [
+        931,
+        661,
+        272,
+        73
+      ],
+      "text": "LIBRARY"
+    },
+    {
+      "bbox": [
+        1561,
+        703,
+        222,
+        78
+      ],
+      "text": "CHEMIST"
+    },
+    {
+      "bbox": [
+        826,
+        1081,
+        253,
+        54
+      ],
+      "text": "RESTAURANT"
+    },
+    {
+      "bbox": [
+        1100,
+        2301,
+        108,
+        54
+      ],
+      "text": "road"
+    },
+    {
+      "bbox": [
+        490,
+        2330,
+        229,
+        58
+      ],
+      "text": "pavement"
+    },
+    {
+      "bbox": [
+        294,
+        2680,
+        192,
+        64
+      ],
+      "text": "bus stop"
+    },
+    {
+      "bbox": [
+        2151,
+        2726,
+        160,
+        64
+      ],
+      "text": "factory"
+    },
+    {
+      "bbox": [
+        791,
+        2748,
+        159,
+        53
+      ],
+      "text": "church"
+    },
+    {
+      "bbox": [
+        1280,
+        2765,
+        194,
+        64
+      ],
+      "text": "crossing"
+    },
+    {
+      "bbox": [
+        1526,
+        3084,
+        425,
+        91
+      ],
+      "text": "riding a motorcycle"
+    },
+    {
+      "bbox": [
+        877,
+        3135,
+        169,
+        66
+      ],
+      "text": "playing"
+    },
+    {
+      "bbox": [
+        256,
+        3309,
+        399,
+        85
+      ],
+      "text": "crossing the road"
+    },
+    {
+      "bbox": [
+        1189,
+        3331,
+        327,
+        65
+      ],
+      "text": "posting a letter"
+    }
+  ],
+  "width": 2481,
+  "height": 3509
+}

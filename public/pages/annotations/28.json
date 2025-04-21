@@ -1,0 +1,195 @@
+{
+  "annotations": [
+    {
+      "bbox": [
+        1724,
+        385,
+        94,
+        50
+      ],
+      "text": "tree"
+    },
+    {
+      "bbox": [
+        585,
+        448,
+        192,
+        66
+      ],
+      "text": "catching"
+    },
+    {
+      "bbox": [
+        1421,
+        478,
+        129,
+        65
+      ],
+      "text": "yacht"
+    },
+    {
+      "bbox": [
+        966,
+        551,
+        183,
+        66
+      ],
+      "text": "hopping"
+    },
+    {
+      "bbox": [
+        1287,
+        631,
+        489,
+        68
+      ],
+      "text": "playing hide-and-seek"
+    },
+    {
+      "bbox": [
+        1114,
+        734,
+        165,
+        65
+      ],
+      "text": "looking"
+    },
+    {
+      "bbox": [
+        1742,
+        753,
+        138,
+        85
+      ],
+      "text": "hiding"
+    },
+    {
+      "bbox": [
+        2035,
+        754,
+        136,
+        69
+      ],
+      "text": "swing"
+    },
+    {
+      "bbox": [
+        2043,
+        1165,
+        125,
+        60
+      ],
+      "text": "swan"
+    },
+    {
+      "bbox": [
+        530,
+        1318,
+        338,
+        91
+      ],
+      "text": "playing football"
+    },
+    {
+      "bbox": [
+        1075,
+        1631,
+        400,
+        74
+      ],
+      "text": "riding on a scooter"
+    },
+    {
+      "bbox": [
+        1972,
+        1633,
+        108,
+        49
+      ],
+      "text": "slide"
+    },
+    {
+      "bbox": [
+        1851,
+        1891,
+        303,
+        87
+      ],
+      "text": "skipping rope"
+    },
+    {
+      "bbox": [
+        1975,
+        2211,
+        194,
+        45
+      ],
+      "text": "see-Saw"
+    },
+    {
+      "bbox": [
+        719,
+        2209,
+        188,
+        67
+      ],
+      "text": "skipping"
+    },
+    {
+      "bbox": [
+        1333,
+        2411,
+        290,
+        64
+      ],
+      "text": "roller-skating"
+    },
+    {
+      "bbox": [
+        1360,
+        2527,
+        199,
+        138
+      ],
+      "text": "sailing yachts"
+    },
+    {
+      "bbox": [
+        1978,
+        2964,
+        172,
+        49
+      ],
+      "text": "scooter"
+    },
+    {
+      "bbox": [
+        335,
+        3051,
+        242,
+        129
+      ],
+      "text": "feeding the ducks"
+    },
+    {
+      "bbox": [
+        1030,
+        3303,
+        149,
+        65
+      ],
+      "text": "fishing"
+    },
+    {
+      "bbox": [
+        1985,
+        3344,
+        169,
+        65
+      ],
+      "text": "sandpit"
+    }
+  ],
+  "width": 2481,
+  "height": 3509
+}

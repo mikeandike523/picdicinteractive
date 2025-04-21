@@ -1,6 +1,4 @@
 {
-  "width": 2481,
-  "height": 3509,
   "annotations": [
     {
       "bbox": [
@@ -110,5 +108,7 @@
       ],
       "text": "brother"
     }
-  ]
+  ],
+  "width": 2481,
+  "height": 3509
 }
