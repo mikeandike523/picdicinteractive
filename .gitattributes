@@ -1,13 +1,5 @@
 # Treat all files as text by default
 * text=auto
 
-# Explicitly mark binary file types as binary (no EOL conversion)
-*.png binary
-*.jpg binary
-*.gif binary
-*.mp4 binary
-*.zip binary
-*.exe binary
-
 # Git LFS rules
-public/* filter=lfs diff=lfs merge=lfs -text
+public/** filter=lfs diff=lfs merge=lfs -text
