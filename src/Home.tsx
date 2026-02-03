@@ -31,12 +31,18 @@ export default function Home() {
       {catalogData ? (
         <Div
           width="100%"
-          maxWidth={`${70 * 0.7}rem`}
+          maxWidth={`min(${70 * 0.7}rem,100dvw)`}
           display="flex"
           flexDirection="column"
           alignItems="stretch"
+          maxHeight="100dvh"
+          overflowY="auto"
+          position="relative"
         >
           <H1
+            position="sticky"
+            top="0"
+            left="0"
             textAlign="center"
             color={theme.colors.card.header.textColor}
             backgroundColor={theme.colors.card.header.backgroundColor}
@@ -50,7 +56,13 @@ export default function Home() {
             columnGap="1rem"
             width="100%"
             display="grid"
-            gridTemplateColumns="repeat(3, 1fr)"
+            // gridTemplateColumns="repeat(3, 1fr)"
+            css={css`
+              grid-template-columns: 1fr 1fr;
+              @media (min-aspect-ratio: 1/1) {
+                grid-template-columns: 1fr 1fr 1fr;
+              }
+            `}
             backgroundColor={theme.colors.card.backgroundColor}
             padding={theme.pages.home.layout.lessonListingGap}
           >

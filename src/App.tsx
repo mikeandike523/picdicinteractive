@@ -453,16 +453,31 @@ export default function App() {
       <Div
         width="100dvw"
         height="100dvh"
-        overflow="hidden"
+        overflow="auto"
         display="grid"
-        gridTemplateRows="1fr"
-        gridTemplateColumns="60dvw 1fr"
+
+        css={css`
+          grid-template-rows: 60dvh 40dvh;
+          grid-template-columns: 1fr;
+          @media (min-aspect-ratio: 1/1) {
+            grid-template-rows: 1fr;
+            grid-template-columns: 60dvw 1fr;
+          }
+          
+
+          
+          `}
       >
         <Div
           display="grid"
-          height="100dvh"
           gridTemplateRows="auto 1fr"
           gridTemplateColumns="1fr"
+          css={css`
+          height: 60dvh;
+          @media (min-aspect-ratio: 1/1) {
+            height: 100dvh;
+          }
+            `}
         >
           {catalogData && (
             <Div zIndex={3}>
@@ -554,6 +569,7 @@ export default function App() {
           flexWrap="wrap"
           alignItems="center"
           justifyContent="center"
+          overflowY="auto"
         >
           <Div
             display="flex"
